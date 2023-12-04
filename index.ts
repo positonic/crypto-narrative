@@ -3,7 +3,7 @@ import axios from 'axios';
 //import chalk from 'chalk';
 import TelegramBot from 'node-telegram-bot-api';
 import testData from './testData.json';
-import trimMessage from './utils';
+import { trimMessage } from './utils';
 
 // Define types for the protocol data
 type Protocol = {
