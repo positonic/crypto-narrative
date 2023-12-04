@@ -1,3 +1,4 @@
+require('dotenv').config()
 import axios from 'axios';
 //import chalk from 'chalk';
 import TelegramBot from 'node-telegram-bot-api';
@@ -71,12 +72,13 @@ export function formatNarratives(narratives: Narratives): string {
 }
 
 async function postToTelegram(message: string) {
+    
     if (!TELEGRAM_TOKEN || !TELEGRAM_CHANNEL_ID) {
         console.error('Telegram token or channel ID is missing.');
         return;
     }
     try {
-        await bot.sendMessage(TELEGRAM_CHANNEL_ID, message, { parse_mode: 'Markdown' });
+        await bot.sendMessage(TELEGRAM_CHANNEL_ID, message.substring(0, 4090), { parse_mode: 'Markdown' });
         // console.log(chalk.bold.yellow('Message posted to Telegram channel successfully.'));
         console.log('Message posted to Telegram channel successfully.');
     } catch (error) {
@@ -86,8 +88,8 @@ async function postToTelegram(message: string) {
 }
 
 async function fetch_data(api_url: string): Promise<{ protocols: Protocol[] }> {
-    const isTest = process.env.NODE_ENV === 'test'; // Check if the environment is 'test'
-
+    //const isTest = process.env.NODE_ENV === 'test'; // Check if the environment is 'test'
+    const isTest=true;
     if (isTest) {
         return testData as { protocols: Protocol[] };
     } else {
