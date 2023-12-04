@@ -4,7 +4,7 @@ This project is designed to fetch and analyze data from DeFi Llama, specifically
 
 ## Features
 
-- Fetching DeFi Llama categories and data using their API.
+- Fetching DeFi Llama categories and data using their API. ([Same data used here](https://defillama.com/categories))
 - Analyzing TVL data to identify growth trends in various DeFi categories.
 - Posting the analysis results daily to a Telegram channel.
 - Scheduled script execution using GitHub Actions.

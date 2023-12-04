@@ -1,6 +1,7 @@
 import axios from 'axios';
-import chalk from 'chalk';
+//import chalk from 'chalk';
 import TelegramBot from 'node-telegram-bot-api';
+import testData from './testData.json';
 
 // Define types for the protocol data
 type Protocol = {
@@ -14,9 +15,7 @@ type Protocol = {
 
 type Narrative = {
     name: string;
-    daily_growth: number;
-    weekly_growth: number;
-    monthly_growth: number;
+    tvl: number;
 };
 
 type Narratives = {
@@ -26,77 +25,78 @@ type Narratives = {
 // API endpoint
 const API_URL = "https://defillama-datasets.llama.fi/lite/protocols2?b=2";
 
-// Telegram Bot setup (replace with your actual bot token and chat ID)
-const TELEGRAM_BOT_TOKEN = 'YOUR_BOT_TOKEN';
-const TELEGRAM_CHAT_ID = 'YOUR_CHAT_ID';
-const bot = new TelegramBot(TELEGRAM_BOT_TOKEN);
+// Telegram Bot Configurations
+const TELEGRAM_TOKEN = 'YOUR_TELEGRAM_BOT_TOKEN';
+const TELEGRAM_CHANNEL_ID = '@YourChannelID';
 
-async function fetch_data(api_url: string): Promise<{ protocols: Protocol[] }> {
-    const response = await axios.get(api_url);
-    return response.data;
-}
+const bot = new TelegramBot(TELEGRAM_TOKEN); // Constructing the bot
 
-function analyze_data(data: { protocols: Protocol[] }): Narratives {
+export function analyze_data(data: { protocols: Protocol[] }): Narratives {
     const narratives: Narratives = {};
     data.protocols.forEach(protocol => {
-        const { category, name, tvl, tvlPrevDay, tvlPrevWeek, tvlPrevMonth } = protocol;
-
-        // Calculate growth rates
-        const daily_growth = tvlPrevDay ? (tvl - tvlPrevDay) / tvlPrevDay : 0;
-        const weekly_growth = tvlPrevWeek ? (tvl - tvlPrevWeek) / tvlPrevWeek : 0;
-        const monthly_growth = tvlPrevMonth ? (tvl - tvlPrevMonth) / tvlPrevMonth : 0;
+        const { category, name, tvl } = protocol;
 
         if (!narratives[category]) {
             narratives[category] = [];
         }
 
-        narratives[category].push({
-            name,
-            daily_growth,
-            weekly_growth,
-            monthly_growth
-        });
+        narratives[category].push({ name, tvl });
     });
 
-    // Sort and get top 10 projects in each category
+    // Sort and pick top 10
     for (const category in narratives) {
-        narratives[category].sort((a, b) => b.daily_growth - a.daily_growth);
+        narratives[category].sort((a, b) => b.tvl - a.tvl);
         narratives[category] = narratives[category].slice(0, 10);
     }
 
     return narratives;
 }
 
-function formatNarrativesForTelegram(narratives: Narratives): string {
+export function formatNarratives(narratives: Narratives): string {
     let message = '';
     for (const category in narratives) {
-        message += `*Category: ${category}*\n`;
-        narratives[category].forEach(protocol => {
-            message += ` - ${protocol.name}: Daily Growth: ${protocol.daily_growth.toFixed(2)}, Weekly Growth: ${protocol.weekly_growth.toFixed(2)}, Monthly Growth: ${protocol.monthly_growth.toFixed(2)}\n`;
+        //message += chalk.bold.blue(`Category: ${category}\n`);
+        message += `Category: ${category}\n`;
+        narratives[category].forEach((protocol, index) => {
+            //message += chalk.green(` ${index + 1}. ${protocol.name}: ${protocol.tvl}\n`);
+            message += ` ${index + 1}. ${protocol.name}: ${protocol.tvl}\n`;
         });
-        message += '\n';
     }
     return message;
 }
 
 async function postToTelegram(message: string) {
-    await bot.sendMessage(TELEGRAM_CHAT_ID, message, { parse_mode: 'Markdown' });
+    try {
+        await bot.sendMessage(TELEGRAM_CHANNEL_ID, message, { parse_mode: 'Markdown' });
+        // console.log(chalk.bold.yellow('Message posted to Telegram channel successfully.'));
+        console.log('Message posted to Telegram channel successfully.');
+    } catch (error) {
+        // console.error(chalk.bold.red('Failed to post message to Telegram channel:'), error);
+        console.error('Failed to post message to Telegram channel:', error);
+    }
+}
+
+async function fetch_data(api_url: string): Promise<{ protocols: Protocol[] }> {
+    const isTest = process.env.NODE_ENV === 'test'; // Check if the environment is 'test'
+    if (isTest) {
+        return testData as { protocols: Protocol[] };
+    } else {
+        const response = await axios.get(api_url); // Fetch data from API in other environments
+        return response.data as { protocols: Protocol[] }; 
+    }
 }
 
 async function main() {
     try {
-        const data = await fetch_data(API_URL);
+        const data = await fetch_data(API_URL); // This will now fetch data based on the environment
         const narratives = analyze_data(data);
+        const formattedNarratives = formatNarratives(narratives);
 
-        // Print results with colors
-        for (const category in narratives) {
-            console.log(chalk.blue(`Category: ${category}`));
-            narratives[category].forEach(protocol => {
-                console.log(chalk.green(` - ${protocol.name}:`), `Daily Growth: ${protocol.daily_growth.toFixed(2)}, Weekly Growth: ${protocol.weekly_growth.toFixed(2)}, Monthly Growth: ${protocol.monthly_growth.toFixed(2)}`);
-            });
-        }
+        console.log(formattedNarratives);
+        await postToTelegram(formattedNarratives);
+    } catch (error) {
+        console.error("Error:", error);
+    }
+}
 
-        // Format and send message to Telegram
-        const telegramMessage = formatNarrativesForTelegram(narratives);
-        await postToTelegram(telegramMessage);
-        console.log(chalk.yellow('Results posted to Telegram
+main();
