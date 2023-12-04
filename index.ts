@@ -26,8 +26,13 @@ type Narratives = {
 const API_URL = "https://defillama-datasets.llama.fi/lite/protocols2?b=2";
 
 // Telegram Bot Configurations
-const TELEGRAM_TOKEN = 'YOUR_TELEGRAM_BOT_TOKEN';
-const TELEGRAM_CHANNEL_ID = '@YourChannelID';
+const TELEGRAM_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const TELEGRAM_CHANNEL_ID = process.env.TELEGRAM_CHAT_ID;
+
+if (!TELEGRAM_TOKEN || !TELEGRAM_CHANNEL_ID) {
+    console.error('Telegram token or channel ID is not set. Please check your environment variables.');
+    process.exit(1); // Exit the process if the required env variables are not set
+}
 
 const bot = new TelegramBot(TELEGRAM_TOKEN); // Constructing the bot
 
@@ -66,6 +71,10 @@ export function formatNarratives(narratives: Narratives): string {
 }
 
 async function postToTelegram(message: string) {
+    if (!TELEGRAM_TOKEN || !TELEGRAM_CHANNEL_ID) {
+        console.error('Telegram token or channel ID is missing.');
+        return;
+    }
     try {
         await bot.sendMessage(TELEGRAM_CHANNEL_ID, message, { parse_mode: 'Markdown' });
         // console.log(chalk.bold.yellow('Message posted to Telegram channel successfully.'));
@@ -78,6 +87,7 @@ async function postToTelegram(message: string) {
 
 async function fetch_data(api_url: string): Promise<{ protocols: Protocol[] }> {
     const isTest = process.env.NODE_ENV === 'test'; // Check if the environment is 'test'
+
     if (isTest) {
         return testData as { protocols: Protocol[] };
     } else {
