@@ -3,6 +3,7 @@ import axios from 'axios';
 //import chalk from 'chalk';
 import TelegramBot from 'node-telegram-bot-api';
 import testData from './testData.json';
+import trimMessage from './utils';
 
 // Define types for the protocol data
 type Protocol = {
@@ -78,7 +79,7 @@ async function postToTelegram(message: string) {
         return;
     }
     try {
-        await bot.sendMessage(TELEGRAM_CHANNEL_ID, message.substring(0, 4090), { parse_mode: 'Markdown' });
+        await bot.sendMessage(TELEGRAM_CHANNEL_ID, trimMessage(message), { parse_mode: 'Markdown' });
         // console.log(chalk.bold.yellow('Message posted to Telegram channel successfully.'));
         console.log('Message posted to Telegram channel successfully.');
     } catch (error) {
