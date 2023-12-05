@@ -17,11 +17,17 @@ jobs:
       with:
         node-version: '14'  # Specify the Node.js version
 
+    - name: Install TypeScript
+      run: npm install -g typescript
+
     - name: Install dependencies
       run: npm install
 
+    - name: Build TypeScript files
+      run: tsc
+
     - name: Run script
-      run: node index.ts
+      run: node dist/index.js  # Use 'dist' folder if TypeScript output goes there
       env:
         TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
         TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
